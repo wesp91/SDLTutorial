@@ -1,9 +1,25 @@
 #include <SDL.h>
 #include <stdio.h>
+#include <string>
+
+enum KeyPressSurfaces
+{
+	KEY_PRESS_SURFACE_DEFAULT,
+	KEY_PRESS_SURFACE_UP,
+	KEY_PRESS_SURFACE_DOWN,
+	KEY_PRESS_SURFACE_LEFT,
+	KEY_PRESS_SURFACE_RIGHT,
+	KEY_PRESS_SURFACE_TOTAL
+};
+
+
 
 bool init();
 bool loadMedia();
 void close();
+SDL_Surface* loadSurface(std::string path);
+
+
 
 
 const int SCREEN_WIDTH = 640;
@@ -12,7 +28,10 @@ const int SCREEN_HEIGHT = 480;
 
 SDL_Window* gWindow = NULL;
 SDL_Surface* gScreenSurface = NULL;
-SDL_Surface* gXout = NULL;
+SDL_Surface* gKeyPressSurfaces[KEY_PRESS_SURFACE_TOTAL];
+SDL_Surface* gCurrentSurface = NULL;
+
+
 
 bool init()
 {
@@ -42,16 +61,54 @@ bool init()
 }
 
 
+SDL_Surface* loadSurface(std::string path)
+{
+	SDL_Surface* loadSurface = SDL_LoadBMP(path.c_str());
+	if ( loadSurface == NULL)
+	{
+		printf("Unable to load image %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
+	}
+
+	return loadSurface;
+}
+
+
 bool loadMedia()
 {
 	bool success = true;
 
-	gXout = SDL_LoadBMP("img/x.bmp");
-
-	if (gXout == NULL)
+	gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT] = loadSurface("img/press.bmp");
+	if (gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT] == NULL)
 	{
-		printf("Unable to load image %s! SDL Error: %s\n", "img/x.bmp", SDL_GetError());
+		printf("Failed to load default image!\n");
+		success = false;
+	}
 
+	gKeyPressSurfaces[KEY_PRESS_SURFACE_UP] = loadSurface("img/up.bmp");
+	if (gKeyPressSurfaces[KEY_PRESS_SURFACE_UP] == NULL)
+	{
+		printf("Failed to load up image!\n");
+		success = false;
+	}
+
+	gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN] = loadSurface("img/down.bmp");
+	if (gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN] == NULL)
+	{
+		printf("Failed to load down image!\n");
+		success = false;
+	}
+
+	gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] = loadSurface("img/left.bmp");
+	if (gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] == NULL)
+	{
+		printf("Failed to load left image!\n");
+		success = false;
+	}
+
+	gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] = loadSurface("img/right.bmp");
+	if (gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] == NULL)
+	{
+		printf("Failed to load right image!\n");
 		success = false;
 	}
 
@@ -61,8 +118,8 @@ bool loadMedia()
 
 void close()
 {
-	SDL_FreeSurface(gXout);
-	gXout = NULL;
+	SDL_FreeSurface(gCurrentSurface);
+	gCurrentSurface = NULL;
 
 	SDL_DestroyWindow(gWindow);
 	gWindow = NULL;
@@ -88,6 +145,8 @@ int main(int argc, char* args[])
 			bool quit = false;
 			SDL_Event e;
 
+			gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
+
 			while (!quit)
 			{
 				while (SDL_PollEvent(&e) != 0)
@@ -96,12 +155,34 @@ int main(int argc, char* args[])
 					{
 						quit = true;
 					}
+					else if (e.type == SDL_KEYDOWN)
+					{
+						switch (e.key.keysym.sym)
+						{
+							case SDLK_UP:
+								gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_UP];
+								break;
+							case SDLK_DOWN:
+								gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN];
+								break;
+							case SDLK_LEFT:
+								gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT];
+								break;
+							case SDLK_RIGHT:
+								gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT];
+								break;
+							default:
+								gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
+								break;
+						}
+					}
 				}
+
+				SDL_BlitSurface(gCurrentSurface, NULL, gScreenSurface, NULL);
+
+				SDL_UpdateWindowSurface(gWindow);
+
 			}
-
-			SDL_BlitSurface(gXout, NULL, gScreenSurface, NULL);
-
-			SDL_UpdateWindowSurface(gWindow);
 
 			close();
 		}
