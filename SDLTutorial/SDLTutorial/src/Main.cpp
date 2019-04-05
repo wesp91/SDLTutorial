@@ -63,13 +63,25 @@ bool init()
 
 SDL_Surface* loadSurface(std::string path)
 {
-	SDL_Surface* loadSurface = SDL_LoadBMP(path.c_str());
+	SDL_Surface* optimizedSurface = NULL;
+
+	SDL_Surface* loadedSurface = SDL_LoadBMP(path.c_str());
 	if ( loadSurface == NULL)
 	{
 		printf("Unable to load image %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
 	}
+	else
+	{
+		optimizedSurface = SDL_ConvertSurface(loadedSurface, gScreenSurface->format, NULL);
+		if (optimizedSurface == NULL)
+		{
+			printf("Unable to optimze image %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
+		}
 
-	return loadSurface;
+		SDL_FreeSurface(loadedSurface);
+	}
+
+	return optimizedSurface;
 }
 
 
